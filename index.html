@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f5f5f4">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Money Tracker">
+<title>Money Tracker</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f4;--bg3:#eeecea;
+  --bg-info:#e6f1fb;--bg-success:#eaf3de;--bg-danger:#fcebeb;
+  --text:#1a1a18;--text2:#6b6b67;--text3:#9a9994;
+  --text-info:#0c447c;--text-success:#27500a;--text-danger:#791f1f;--text-warn:#633806;
+  --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.18);
+  --r-sm:8px;--r-md:12px;--r-lg:16px;
+  --nav-h:60px;--header-h:56px;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --bg-info:#042c53;--bg-success:#173404;--bg-danger:#501313;
+  --text:#f0efea;--text2:#a8a8a2;--text3:#6e6e68;
+  --text-info:#85b7eb;--text-success:#97c459;--text-danger:#f09595;--text-warn:#fac775;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.16);
+}}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5;overscroll-behavior:none}
+.shell{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* Header */
+.header{height:var(--header-h);background:var(--bg2);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 16px;flex-shrink:0;padding-top:env(safe-area-inset-top)}
+.header-title{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.header-sub{font-size:12px;color:var(--text3);margin-left:auto}
+
+/* Scroll area */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px)}
+
+/* Page */
+.page{display:none;padding:16px}
+.page.active{display:block}
+
+/* Bottom nav */
+.bottom-nav{height:var(--nav-h);background:var(--bg2);border-top:0.5px solid var(--border);display:flex;align-items:stretch;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:transparent;border:none;cursor:pointer;color:var(--text3);font-family:var(--font);padding:6px 0;transition:color .12s}
+.nav-item.active{color:var(--text-success)}
+.nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item span{font-size:10px;font-weight:500}
+
+/* Metric cards */
+.metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.metric{background:var(--bg2);border-radius:var(--r-md);padding:12px 10px}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px}
+.metric-val{font-size:16px;font-weight:600;letter-spacing:-0.3px}
+.metric-sub{font-size:10px;color:var(--text3);margin-top:2px;word-break:break-word}
+.metric-val.income{color:var(--text-success)}
+.metric-val.spend{color:var(--text-danger)}
+.metric-val.profit{color:var(--text-info)}
+.metric-val.loss{color:var(--text-danger)}
+.metric-wide{grid-column:span 3}
+
+/* Card */
+.card{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r-lg);padding:14px 14px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px}
+
+/* Form */
+.field{margin-bottom:10px}
+.field label{font-size:11px;color:var(--text2);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.04em;font-weight:500}
+input,select{width:100%;padding:11px 12px;border:0.5px solid var(--border2);border-radius:var(--r-sm);font-size:15px;background:var(--bg2);color:var(--text);font-family:var(--font);outline:none;appearance:none;-webkit-appearance:none}
+input:focus,select:focus{border-color:var(--text-success);box-shadow:0 0 0 3px rgba(39,80,10,0.10)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.add-btn{width:100%;padding:13px;background:var(--bg-success);border:none;border-radius:var(--r-md);font-size:15px;font-weight:600;color:var(--text-success);cursor:pointer;font-family:var(--font);margin-top:4px;transition:opacity .12s}
+.add-btn:active{opacity:0.75}
+
+/* Month bar */
+.month-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.month-bar label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
+.month-bar select{flex:1;font-size:13px;padding:7px 10px}
+
+/* Entries */
+.day-block{margin-bottom:2px}
+.day-header{display:flex;justify-content:space-between;align-items:center;padding:10px 2px 5px;border-bottom:0.5px solid var(--border)}
+.day-name{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em}
+.day-total{font-size:12px;font-weight:600}
+.entry{display:flex;align-items:center;gap:8px;padding:11px 2px;border-bottom:0.5px solid var(--border)}
+.entry:last-child{border-bottom:none}
+.entry-main{flex:1;min-width:0}
+.entry-source{font-size:14px;color:var(--text);display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.entry-note{font-size:12px;color:var(--text3);margin-top:2px}
+.entry-right{text-align:right;min-width:88px}
+.entry-amount{font-size:14px;font-weight:600}
+.entry-amount.income{color:var(--text-success)}
+.entry-amount.spend{color:var(--text-danger)}
+.entry-conv{font-size:11px;color:var(--text3);margin-top:1px}
+.del-btn{width:32px;height:32px;background:transparent;border:0.5px solid var(--border);border-radius:50%;cursor:pointer;color:var(--text3);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.del-btn:active{background:var(--bg-danger);color:var(--text-danger);border-color:transparent}
+
+/* Badge */
+.cbadge{font-size:10px;padding:2px 5px;border-radius:4px;font-weight:600}
+.cbadge-EGP{background:var(--bg3);color:var(--text2)}
+.cbadge-USD{background:var(--bg-info);color:var(--text-info)}
+.cbadge-EUR{background:var(--bg-success);color:var(--text-success)}
+
+.empty{font-size:14px;color:var(--text3);text-align:center;padding:40px 0}
+.hint{font-size:12px;color:var(--text-success);margin-top:8px;min-height:18px;text-align:center}
+.save-btn{width:100%;padding:13px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r-md);font-size:15px;font-weight:500;color:var(--text);cursor:pointer;font-family:var(--font);margin-top:4px;transition:background .12s}
+.save-btn:active{background:var(--bg3)}
+.info-text{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+
+/* Install banner */
+.install-banner{background:var(--bg-success);border-radius:var(--r-md);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.install-banner-text{flex:1;font-size:13px;color:var(--text-success);line-height:1.4}
+.install-banner-close{background:transparent;border:none;color:var(--text-success);font-size:18px;cursor:pointer;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <span class="header-title">Money Tracker</span>
+    <span class="header-sub" id="hdr-month"></span>
+  </div>
+
+  <div class="content">
+
+    <!-- INCOME -->
+    <div class="page active" id="page-income">
+      <div id="install-prompt"></div>
+      <div class="metric-grid">
+        <div class="metric metric-wide">
+          <div class="metric-label">Total income — <span id="inc-month-label"></span></div>
+          <div class="metric-val income" id="inc-total">EGP 0.00</div>
+          <div class="metric-sub" id="inc-sub"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add income</div>
+        <div class="row2">
+          <div class="field"><label>Date</label><input type="date" id="inc-date"></div>
+          <div class="field"><label>Source</label>
+            <select id="inc-source">
+              <option>Salary</option>
+              <option>Job assignment</option>
+              <option>Tip</option>
+              <option>Tour commission</option>
+              <option>Tour tip</option>
+            </select>
+          </div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>Amount</label><input type="number" id="inc-amount" placeholder="0.00" inputmode="decimal"></div>
+          <div class="field"><label>Currency</label>
+            <select id="inc-currency">
+              <option value="EGP">EGP</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div class="field"><label>Note</label><input type="text" id="inc-note" placeholder="Optional"></div>
+        </div>
+        <button class="add-btn" onclick="addIncome()">+ Add entry</button>
+      </div>
+      <div class="month-bar">
+        <label>Month</label>
+        <select id="inc-month-filter" onchange="renderIncome()"></select>
+      </div>
+      <div id="inc-entries"></div>
+    </div>
+
+    <!-- SPENDING -->
+    <div class="page" id="page-spending">
+      <div class="metric-grid">
+        <div class="metric metric-wide">
+          <div class="metric-label">Total spending — <span id="sp-month-label"></span></div>
+          <div class="metric-val spend" id="sp-total">EGP 0.00</div>
+          <div class="metric-sub" id="sp-sub"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add spending</div>
+        <div class="row2">
+          <div class="field"><label>Date</label><input type="date" id="sp-date"></div>
+          <div class="field"><label>Category</label>
+            <select id="sp-cat">
+              <option>Food &amp; drinks</option>
+              <option>Transport</option>
+              <option>Rent &amp; utilities</option>
+              <option>Shopping</option>
+              <option>Health</option>
+              <option>Entertainment</option>
+              <option>Education</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>Amount</label><input type="number" id="sp-amount" placeholder="0.00" inputmode="decimal"></div>
+          <div class="field"><label>Currency</label>
+            <select id="sp-currency">
+              <option value="EGP">EGP</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div class="field"><label>Description</label><input type="text" id="sp-note" placeholder="Optional"></div>
+        </div>
+        <button class="add-btn" onclick="addSpending()">+ Add entry</button>
+      </div>
+      <div class="month-bar">
+        <label>Month</label>
+        <select id="sp-month-filter" onchange="renderSpending()"></select>
+      </div>
+      <div id="sp-entries"></div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="page" id="page-summary">
+      <div class="month-bar">
+        <label>Month</label>
+        <select id="sum-month-filter" onchange="renderSummary()"></select>
+      </div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-label">Income</div>
+          <div class="metric-val income" id="sum-income">EGP 0</div>
+          <div class="metric-sub" id="sum-inc-sub"></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Spending</div>
+          <div class="metric-val spend" id="sum-spend">EGP 0</div>
+          <div class="metric-sub" id="sum-sp-sub"></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label" id="sum-profit-label">Net profit</div>
+          <div class="metric-val profit" id="sum-profit">EGP 0</div>
+        </div>
+      </div>
+      <div id="sum-breakdown"></div>
+    </div>
+
+    <!-- RATES -->
+    <div class="page" id="page-rates">
+      <div class="card">
+        <div class="card-title">Exchange rates to EGP</div>
+        <p class="info-text">All totals convert to EGP using these rates. Update any time — your data is always saved in the original currency.</p>
+        <div class="row2">
+          <div class="field"><label>1 USD = ? EGP</label><input type="number" id="rate-usd" inputmode="decimal" placeholder="e.g. 50.5"></div>
+          <div class="field"><label>1 EUR = ? EGP</label><input type="number" id="rate-eur" inputmode="decimal" placeholder="e.g. 55.0"></div>
+        </div>
+        <button class="save-btn" onclick="saveRates()">Save rates</button>
+        <p class="hint" id="rates-msg"></p>
+      </div>
+      <div class="card">
+        <div class="card-title">How currency works</div>
+        <p class="info-text">Each entry is saved in its original currency (EGP, USD, or EUR) shown with a colored badge. Where relevant, a converted EGP amount is shown below. All monthly totals and profit use EGP equivalents.</p>
+        <p class="info-text" style="margin:0">Your data is stored privately on this device and never leaves it.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-income" onclick="showPage('income',this)">
+      <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span>Income</span>
+    </button>
+    <button class="nav-item" id="nav-spending" onclick="showPage('spending',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span>Spending</span>
+    </button>
+    <button class="nav-item" id="nav-summary" onclick="showPage('summary',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Summary</span>
+    </button>
+    <button class="nav-item" id="nav-rates" onclick="showPage('rates',this)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Rates</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+let db = { incomes:[], spendings:[], rates:{USD:50,EUR:55} };
+
+function load() {
+  try { const s = localStorage.getItem('mt_db'); if(s) db = {...db,...JSON.parse(s)}; } catch(e) {}
+  if(!db.rates) db.rates={USD:50,EUR:55};
+  if(!db.incomes) db.incomes=[];
+  if(!db.spendings) db.spendings=[];
+}
+
+function save() {
+  try { localStorage.setItem('mt_db', JSON.stringify(db)); } catch(e) {}
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+function toEGP(a,c) { if(c==='USD') return a*db.rates.USD; if(c==='EUR') return a*db.rates.EUR; return a; }
+function fmtEGP(n) { return 'EGP '+Math.abs(n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtOrig(n,c) { const s={EGP:'EGP ',USD:'$',EUR:'€'}; return (s[c]||c+' ')+n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function badge(c) { return `<span class="cbadge cbadge-${c}">${c}</span>`; }
+
+function allMonths() {
+  const s = new Set();
+  [...db.incomes,...db.spendings].forEach(e=>s.add(e.date.slice(0,7)));
+  s.add(today().slice(0,7));
+  return [...s].sort().reverse();
+}
+function monthLabel(ym) {
+  const [y,m]=ym.split('-');
+  return new Date(+y,+m-1,1).toLocaleString('en',{month:'long',year:'numeric'});
+}
+function shortMonth(ym) {
+  const [y,m]=ym.split('-');
+  return new Date(+y,+m-1,1).toLocaleString('en',{month:'short',year:'2-digit'});
+}
+function currBreakdown(entries) {
+  const b={};
+  entries.forEach(e=>{b[e.currency]=(b[e.currency]||0)+e.amount;});
+  return Object.entries(b).map(([c,a])=>fmtOrig(a,c)).join(' + ');
+}
+
+function populateFilters() {
+  const months = allMonths();
+  ['inc-month-filter','sp-month-filter','sum-month-filter'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value||months[0];
+    sel.innerHTML=months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${monthLabel(m)}</option>`).join('');
+  });
+  const ym = document.getElementById('inc-month-filter').value || months[0];
+  document.getElementById('hdr-month').textContent = shortMonth(ym);
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  populateFilters();
+  if(name==='income') renderIncome();
+  if(name==='spending') renderSpending();
+  if(name==='summary') renderSummary();
+}
+
+function saveRates() {
+  const u=parseFloat(document.getElementById('rate-usd').value);
+  const eu=parseFloat(document.getElementById('rate-eur').value);
+  if(isNaN(u)||u<=0||isNaN(eu)||eu<=0){alert('Please enter valid positive rates.');return;}
+  db.rates={USD:u,EUR:eu};
+  save();
+  const msg=document.getElementById('rates-msg');
+  msg.textContent='Rates saved!';
+  setTimeout(()=>msg.textContent='',2500);
+}
+
+function addIncome() {
+  const date=document.getElementById('inc-date').value;
+  const source=document.getElementById('inc-source').value;
+  const amount=parseFloat(document.getElementById('inc-amount').value);
+  const currency=document.getElementById('inc-currency').value;
+  const note=document.getElementById('inc-note').value.trim();
+  if(!date||isNaN(amount)||amount<=0){alert('Please enter a valid date and amount.');return;}
+  db.incomes.push({id:Date.now(),date,source,amount,currency,note});
+  db.incomes.sort((a,b)=>b.date.localeCompare(a.date));
+  save();
+  document.getElementById('inc-amount').value='';
+  document.getElementById('inc-note').value='';
+  populateFilters();
+  renderIncome();
+}
+
+function addSpending() {
+  const date=document.getElementById('sp-date').value;
+  const cat=document.getElementById('sp-cat').value;
+  const amount=parseFloat(document.getElementById('sp-amount').value);
+  const currency=document.getElementById('sp-currency').value;
+  const note=document.getElementById('sp-note').value.trim();
+  if(!date||isNaN(amount)||amount<=0){alert('Please enter a valid date and amount.');return;}
+  db.spendings.push({id:Date.now(),date,cat,amount,currency,note});
+  db.spendings.sort((a,b)=>b.date.localeCompare(a.date));
+  save();
+  document.getElementById('sp-amount').value='';
+  document.getElementById('sp-note').value='';
+  populateFilters();
+  renderSpending();
+}
+
+function deleteIncome(id) {
+  if(!confirm('Delete this entry?')) return;
+  db.incomes=db.incomes.filter(e=>e.id!==id);
+  save(); populateFilters(); renderIncome();
+}
+function deleteSpending(id) {
+  if(!confirm('Delete this entry?')) return;
+  db.spendings=db.spendings.filter(e=>e.id!==id);
+  save(); populateFilters(); renderSpending();
+}
+
+function renderEntries(entries, type) {
+  if(entries.length===0) return '<div class="empty">No entries this month.</div>';
+  const byDay={};
+  entries.forEach(e=>{(byDay[e.date]=byDay[e.date]||[]).push(e);});
+  return Object.keys(byDay).sort((a,b)=>b.localeCompare(a)).map(d=>{
+    const list=byDay[d];
+    const dayTotal=list.reduce((s,e)=>s+toEGP(e.amount,e.currency),0);
+    const short=new Date(d+'T12:00').toLocaleDateString('en',{weekday:'short',day:'numeric',month:'short'});
+    const isInc=type==='income';
+    return `<div class="day-block">
+      <div class="day-header">
+        <span class="day-name">${short}</span>
+        <span class="day-total" style="color:var(${isInc?'--text-success':'--text-danger'})">${isInc?'':'-'}${fmtEGP(dayTotal)}</span>
+      </div>
+      ${list.map(e=>`<div class="entry">
+        <div class="entry-main">
+          <div class="entry-source">${isInc?e.source:e.cat}${badge(e.currency)}</div>
+          ${e.note?`<div class="entry-note">${e.note}</div>`:''}
+        </div>
+        <div class="entry-right">
+          <div class="entry-amount ${type}">${isInc?'':'-'}${fmtOrig(e.amount,e.currency)}</div>
+          ${e.currency!=='EGP'?`<div class="entry-conv">≈ ${fmtEGP(toEGP(e.amount,e.currency))}</div>`:''}
+        </div>
+        <button class="del-btn" onclick="${isInc?'deleteIncome':'deleteSpending'}(${e.id})">✕</button>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderIncome() {
+  const ym=document.getElementById('inc-month-filter').value||today().slice(0,7);
+  const f=db.incomes.filter(e=>e.date.startsWith(ym));
+  const total=f.reduce((s,e)=>s+toEGP(e.amount,e.currency),0);
+  document.getElementById('inc-total').textContent=fmtEGP(total);
+  document.getElementById('inc-month-label').textContent=monthLabel(ym);
+  const sub=currBreakdown(f);
+  document.getElementById('inc-sub').textContent=sub?'Original: '+sub:'';
+  document.getElementById('inc-entries').innerHTML=renderEntries(f,'income');
+}
+
+function renderSpending() {
+  const ym=document.getElementById('sp-month-filter').value||today().slice(0,7);
+  const f=db.spendings.filter(e=>e.date.startsWith(ym));
+  const total=f.reduce((s,e)=>s+toEGP(e.amount,e.currency),0);
+  document.getElementById('sp-total').textContent=fmtEGP(total);
+  document.getElementById('sp-month-label').textContent=monthLabel(ym);
+  const sub=currBreakdown(f);
+  document.getElementById('sp-sub').textContent=sub?'Original: '+sub:'';
+  document.getElementById('sp-entries').innerHTML=renderEntries(f,'spend');
+}
+
+function renderSummary() {
+  const ym=document.getElementById('sum-month-filter').value||today().slice(0,7);
+  const iF=db.incomes.filter(e=>e.date.startsWith(ym));
+  const sF=db.spendings.filter(e=>e.date.startsWith(ym));
+  const inc=iF.reduce((s,e)=>s+toEGP(e.amount,e.currency),0);
+  const sp=sF.reduce((s,e)=>s+toEGP(e.amount,e.currency),0);
+  const profit=inc-sp;
+  document.getElementById('sum-income').textContent=fmtEGP(inc);
+  document.getElementById('sum-spend').textContent=fmtEGP(sp);
+  document.getElementById('sum-inc-sub').textContent=currBreakdown(iF)||'';
+  document.getElementById('sum-sp-sub').textContent=currBreakdown(sF)||'';
+  const pel=document.getElementById('sum-profit');
+  pel.textContent=fmtEGP(Math.abs(profit));
+  pel.className='metric-val '+(profit>=0?'profit':'loss');
+  document.getElementById('sum-profit-label').textContent=profit>=0?'Net profit':'Net loss';
+
+  const ibS={};iF.forEach(e=>{ibS[e.source]=(ibS[e.source]||0)+toEGP(e.amount,e.currency);});
+  const sbC={};sF.forEach(e=>{sbC[e.cat]=(sbC[e.cat]||0)+toEGP(e.amount,e.currency);});
+  const iRows=Object.entries(ibS).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="entry"><div class="entry-main"><div class="entry-source">${k}</div></div><div class="entry-right"><div class="entry-amount income">${fmtEGP(v)}</div></div></div>`).join('');
+  const sRows=Object.entries(sbC).sort((a,b)=>b[1]-a[1]).map(([k,v])=>
+    `<div class="entry"><div class="entry-main"><div class="entry-source">${k}</div></div><div class="entry-right"><div class="entry-amount spend">−${fmtEGP(v)}</div></div></div>`).join('');
+  document.getElementById('sum-breakdown').innerHTML=
+    `<div class="card"><div class="card-title">Income by source</div>${iRows||'<div class="empty">No income this month.</div>'}</div>
+     <div class="card"><div class="card-title">Spending by category</div>${sRows||'<div class="empty">No spending this month.</div>'}</div>`;
+}
+
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('install-prompt');
+  banner.innerHTML = `<div class="install-banner">
+    <div class="install-banner-text">Install Money Tracker on your home screen for quick access.</div>
+    <button class="install-banner-close" onclick="installApp()">Install</button>
+    <button class="install-banner-close" onclick="document.getElementById('install-prompt').innerHTML=''">✕</button>
+  </div>`;
+});
+function installApp() {
+  if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt=null; }
+  document.getElementById('install-prompt').innerHTML='';
+}
+
+// Service worker
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// Init
+load();
+document.getElementById('rate-usd').value = db.rates.USD;
+document.getElementById('rate-eur').value = db.rates.EUR;
+document.getElementById('inc-date').value = today();
+document.getElementById('sp-date').value = today();
+populateFilters();
+renderIncome();
+</script>
+</body>
+</html>
